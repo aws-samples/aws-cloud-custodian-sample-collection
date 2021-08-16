@@ -1,0 +1,19 @@
+---
+
+policies:
+
+  - name: d-sqs-queue-tags
+    resource: aws.sqs
+    description: >
+      Compliance: Tags missing|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-SQSTags: absent

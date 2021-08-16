@@ -1,0 +1,35 @@
+---
+
+policies:
+  - name: r-s3-bucket-tags
+    resource: aws.s3
+    description: >
+      Event: CreateBucket|
+      Compliance: Missing Tags|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - CreateBucket
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-S3Tags: absent
+    actions:
+      #- type: delete
+      #  remove-contents: false
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Bucket NONCOMPLIANT
+        Message: Bucket is missing required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

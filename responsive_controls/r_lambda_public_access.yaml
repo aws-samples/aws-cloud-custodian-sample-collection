@@ -1,0 +1,38 @@
+---
+
+policies:
+
+  - name: r-lambda-public-access
+    resource: aws.lambda
+    description: >
+      Event: CreateFunction20150331, Compliance: Public Access Prohibited,
+      Remediation: Delete
+    mode:
+      type: cloudtrail
+      events:
+        - source: lambda.amazonaws.com
+          event: CreateFunction20150331
+          ids: requestParameters.functionName
+      timeout: 200
+      delay: 20
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: config-compliance
+            states:
+              - NON_COMPLIANT
+            rules:
+              - lambda-function-public-access-prohibited
+          - tag:__Exception-LambdaPublicAccess: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Lambda NONCOMPLIANT
+        Message: public access not blocked
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-alb-tags
+    resource: app-elb
+    description: >
+      Event: CreateLoadBalancer|
+      Compliance: Missing Tags|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: elasticloadbalancing.amazonaws.com
+          event: CreateLoadBalancer
+          ids: requestParameters.name
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-ALBTags: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Load Balancer NONCOMPLIANT
+        Message: Missing required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

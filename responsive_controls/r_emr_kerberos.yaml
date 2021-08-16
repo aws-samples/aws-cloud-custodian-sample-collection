@@ -1,0 +1,36 @@
+---
+
+policies:
+
+  - name: emr-kerberos
+    resource: aws.emr
+    description: >
+      Event: RunJobFlow. Compliance: Required Tags. Remediation: Delete
+    mode:
+      type: cloudtrail
+      events:
+        - event: RunJobFlow
+          source: elasticmapreduce.amazonaws.com
+          ids: responseElements.jobFlowId
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      timeout: 200
+      delay: 5
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: "detail.requestParameters.kerberosAttributes"
+            value: absent
+          - "tag:__Exception-EmrKerberos": absent
+    actions:
+      #- type: terminate
+      - type: notify
+        to:
+          - "arn:aws:sns:us-east-1:{account_id}:{project}-topic"
+        Subject: "EMR Cluster NONCOMPLIANT"
+        Message: "missing kerberos authentication"
+        transport:
+          type: sns
+          topic: {project}-topic

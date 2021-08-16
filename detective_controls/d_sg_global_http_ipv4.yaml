@@ -1,0 +1,20 @@
+---
+
+policies:
+  - name: d-securitygroup-ingress-ipv4-http
+    resource: security-group
+    description: >
+      Compliance: Global access to TCP|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: ingress
+            Ports: [80]
+            Cidr:
+              value: 0.0.0.0/0
+              op: in
+          - tag:__Exception-SecurityGroup: absent

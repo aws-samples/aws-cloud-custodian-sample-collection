@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-kinesis-tags
+    resource: aws.kinesis
+    description: >
+      Event: CreateStream|
+      Compliance: Missing Tags|
+      Remediation: Delete Stream|
+    mode:
+      type: cloudtrail
+      events:
+        - source: kinesis.amazonaws.com
+          event: CreateStream
+          ids: requestParameters.streamName
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-KinesisStreamTags: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Kinesis NONCOMPLIANT
+        Message: stream is missing tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

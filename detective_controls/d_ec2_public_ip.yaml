@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-ec2-public-ip
+    resource: aws.ec2
+    description: >
+      Compliance: Public Enabled|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: "detail.requestParameters.networkInterfaceSet.\
+                  items[].associatePublicIpAddress"
+            value: true
+          - tag:__Exception-PublicIpEC2: absent

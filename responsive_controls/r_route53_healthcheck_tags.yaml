@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-healthcheck-required-tags
+    resource: aws.healthcheck
+    description: >
+      Event: Create Route53 HealthCheck|
+      Compliance: Missing Tags|
+      Remediation: Tag it as NonCompliant|
+    mode:
+      type: cloudtrail
+      events:
+        - source: route53.amazonaws.com
+          event: CreateHealthCheck
+          ids: responseElements.healthCheck.id
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-R53HealthCheckTags: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Required Tags Missing
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Route53 HealthCheck NONCOMPLIANT
+        Message: Route53 HealthCheck required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

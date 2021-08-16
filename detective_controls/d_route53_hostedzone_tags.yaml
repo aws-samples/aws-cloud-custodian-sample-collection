@@ -1,0 +1,18 @@
+---
+
+policies:
+  - name: d-hostedzone-required-tags
+    resource: aws.hostedzone
+    description: >
+      Compliance: route53 HostedZone required tags missing
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - or:
+          - tag:CostCenter: absent
+          - tag:Application: absent
+      - tag:__Exception-R53HostedZoneTags: absent

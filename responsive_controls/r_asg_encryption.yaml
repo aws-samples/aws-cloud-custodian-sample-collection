@@ -1,0 +1,36 @@
+---
+
+policies:
+
+  - name: r-asg-encryption
+    resource: aws.asg
+    description: >
+      Event: CreateAutoScalingGroup|
+      Compliance: Encryption|
+      Remediation: Delete ASG
+    mode:
+      type: cloudtrail
+      events:
+        - source: autoscaling.amazonaws.com
+          event: CreateAutoScalingGroup
+          ids: requestParameters.autoScalingGroupName
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - tag:__Exception-ASGVolumeEncryption: absent
+          - type: not-encrypted
+            exclude_image: false
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: ASG NONCOMPLIANT
+        Message: ASG is not configured for encrypted volumes
+        transport:
+          type: sns
+          topic: "{topic-name}"

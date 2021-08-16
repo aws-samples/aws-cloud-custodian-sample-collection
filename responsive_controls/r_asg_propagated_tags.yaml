@@ -1,0 +1,38 @@
+---
+
+policies:
+
+  - name: r-asg-tags
+    resource: aws.asg
+    description: >
+      Event: CreateAutoScalingGroup|
+      Compliance: Missing Tags|
+      Remediation: Delete ASG
+    mode:
+      type: cloudtrail
+      events:
+        - source: autoscaling.amazonaws.com
+          event: CreateAutoScalingGroup
+          ids: requestParameters.autoScalingGroupName
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - tag:__Exception-ASGPropagatedTags: absent
+          - type: propagated-tags
+            keys: ["CostCenter", "Application"]
+            match: false
+            propagate: true
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: ASG NONCOMPLIANT
+        Message: ASG required propagated tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

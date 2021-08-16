@@ -1,0 +1,37 @@
+---
+
+policies:
+  - name: r-sagemaker-notebook-root
+    resource: sagemaker-notebook
+    description: >
+      Event: Create Notebook|
+      Compliance: Root Access Enabled|
+      Remediation: Delete Notebook|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sagemaker.amazonaws.com
+          event: CreateNotebookInstance
+          ids: responseElements.notebookInstanceArn
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - RootAccess: Enabled
+          - tag:__Exception-SagemakerNotebookRoot: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Root Access Enabled
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Sagemaker Notebook NONCOMPLIANT
+        Message: Notebook has Root access
+        transport:
+          type: sns
+          topic: "{topic-name}"

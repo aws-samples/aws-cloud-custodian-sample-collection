@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-firehose-s3-logging-enabled
+    resource: aws.firehose
+    description: >
+      Event: CreateDeliveryStream|
+      Compliance: CloudWatch Logging Enabled|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: firehose.amazonaws.com
+          event: CreateDeliveryStream
+          ids: requestParameters.deliveryStreamName
+      timeout: 200
+      delay: 100
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: "detail.requestParameters.\
+                  extendedS3DestinationConfiguration.\
+                  cloudWatchLoggingOptions.enabled"
+            op: not-equal
+            value: "true"
+          - tag:__Exception-FirehoseS3Logging: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Kinesis Firehose NONCOMPLIANT
+        Message: Logging not enabled
+        transport:
+          type: sns
+          topic: "{topic-name}"

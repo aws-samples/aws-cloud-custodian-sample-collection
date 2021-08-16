@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-ebs-required-tags
+    resource: aws.ebs
+    description: >
+      Event: CreateVolume|
+      Compliance: Missing Tags|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: CreateVolume
+          ids: responseElements.volumeId
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-EBSTags: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: EBS Volume NONCOMPLIANT
+        Message: EBS Volume required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

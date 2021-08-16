@@ -1,0 +1,22 @@
+---
+
+policies:
+  - name: d-firehose-s3-logging-missing
+    resource: aws.firehose
+    description: >
+      Compliance: S3 Logging Missing|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: event
+            key: "detail.requestParameters.\
+                  extendedS3DestinationConfiguration.\
+                  cloudWatchLoggingOptions.enabled"
+            op: not-equal
+            value: "true"
+          - tag:__Exception-FirehoseS3Logging: absent

@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-elasticache-redis-required-tags
+    resource: aws.cache-cluster
+    description: >
+      Compliance: Missing Tags|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-ElasticacheRedisTags: absent

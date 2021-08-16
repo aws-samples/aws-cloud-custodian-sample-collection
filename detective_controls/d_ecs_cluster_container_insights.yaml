@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-ecs-cluster-containerinsights
+    resource: aws.ecs
+    description: >
+      Compliance: ContainerInsight disabled|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: ClusterSettings.containerInsights
+            value: disabled
+          - tag:__Exception-ECSContainerInsights: absent

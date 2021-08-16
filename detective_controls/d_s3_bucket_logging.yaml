@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-s3-bucket-logging
+    resource: aws.s3
+    description: >
+      Compliance: Bucket Logging Enabled|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: bucket-logging
+            op: disabled
+          - tag:__Exception-S3Logging: absent

@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-dms-encryption
+    resource: aws.dms-instance
+    description: >
+      Event: Create DMS Replication Instance|
+      Compliance: KMS Missing|
+      Remediation: Delete the DMS Instance|
+    mode:
+      type: cloudtrail
+      events:
+        - source: dms.amazonaws.com
+          event: CreateReplicationInstance
+          ids: requestParameters.replicationInstanceIdentifier
+      timeout: 200
+      delay: 80
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: detail.requestParameters.kmsKeyId
+            value: absent
+          - tag:__Exception-DMSEncryption: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: DMS NONCOMPLIANT
+        Message: DMS is not encrypted
+        transport:
+          type: sns
+          topic: "{topic-name}"

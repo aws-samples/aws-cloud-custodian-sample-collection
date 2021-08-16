@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-securitygroup-required-tags
+    resource: security-group
+    description: >
+      Event: Create SecurityGroup|
+      Compliance: Missing Tags|
+      Remediation: Add tags|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: CreateSecurityGroup
+          ids: responseElements.groupId
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-SecurityGroupTags: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Required Tags Missing
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Security Group NONCOMPLIANT
+        Message: Security Group is missing required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

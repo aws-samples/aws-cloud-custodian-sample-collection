@@ -1,0 +1,40 @@
+---
+
+policies:
+
+  - name: r-redshift-required-encryption
+    resource: aws.redshift
+    description: >
+      Event: CreateCluster|
+      Compliance: Encryption|
+      Remediation: Delete Cluster|
+    mode:
+      type: cloudtrail
+      events:
+        - source: redshift.amazonaws.com
+          event: CreateCluster
+          ids: requestParameters.clusterIdentifier
+      timeout: 660
+      delay: 600
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: detail.requestParameters.encrypted
+            value: false
+          - type: event
+            key: detail.requestParameters.kmsKeyId
+            value: absent
+          - tag:__Exception-RedshiftEncryption: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Redshift Cluster NONCOMPLIANT
+        Message: Redshift required encryption set to false
+        transport:
+          type: sns
+          topic: "{topic-name}"

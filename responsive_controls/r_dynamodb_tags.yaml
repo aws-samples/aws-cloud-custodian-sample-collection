@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-dynamodb-required-tags
+    resource: aws.dynamodb-table
+    description: >
+      Event: Create Table|
+      Compliance: DynamoDB required tags missing|
+      Remediation: Delete Table|
+    mode:
+      type: cloudtrail
+      events:
+        - source: dynamodb.amazonaws.com
+          event: CreateTable
+          ids: responseElements.tableDescription.tableName
+      timeout: 200
+      delay: 120
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-DynamoTags: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: DynamoDB NONCOMPLIANT
+        Message: Dynamodb required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

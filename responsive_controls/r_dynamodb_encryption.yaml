@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-dynamodb-encryption
+    resource: aws.dynamodb-table
+    description: >
+      Event: Create Table|
+      Compliance: Encryption|
+      Remediation: Delete Table|
+    mode:
+      type: cloudtrail
+      events:
+        - source: dynamodb.amazonaws.com
+          event: CreateTable
+          ids: responseElements.tableDescription.tableName
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: kms-key
+            key: AliasName
+            value: absent
+          - tag:__Exception-DynamoEncryption: absent
+    actions:
+      - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: DynamoDB NONCOMPLIANT
+        Message: Encryption not enabled
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-hostedzone-logging
+    resource: aws.hostedzone
+    description: >
+      Compliance: route53 HostedZone query logging disabled
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - type: query-logging-enabled
+        state: false
+      - tag:__Exception-R53HostedZonesLogging: absent

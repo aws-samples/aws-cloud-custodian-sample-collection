@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-elasticache-redis-encrypt-rest
+    resource: aws.elasticache-group
+    description: >
+      Event: Create Elasticache for Redis|
+      Compliance: At-Rest Encryption|
+      Remediation: Delete the Elasticache cluster|
+    mode:
+      type: cloudtrail
+      events:
+        - source: elasticache.amazonaws.com
+          event: CreateReplicationGroup
+          ids: requestParameters.replicationGroupId
+      timeout: 600
+      delay: 500
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: detail.requestParameters.atRestEncryptionEnabled
+            value: false
+          - tag:__Exception-ElasticacheRedisEncryptRest: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Redis Elasticache Stack NONCOMPLIANT
+        Message: Redis Elasticache is not encrypted at rest
+        transport:
+          type: sns
+          topic: "{topic-name}"

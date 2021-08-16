@@ -1,0 +1,35 @@
+---
+
+policies:
+
+  - name: r-s3-bucket-encryption
+    resource: aws.s3
+    description: >
+      Event: CreateBucket|
+      Compliance: Encryption|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - CreateBucket
+      timeout: 200
+      delay: 20
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: bucket-encryption
+            state: false
+          - tag:__Exception-S3Encryption: absent
+    actions:
+      #- type: delete
+      #  remove-contents: false
+      - type: notify
+        Subject: Bucket NONCOMPLIANT
+        Message: Encryption not enabled
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        transport:
+          type: sns
+          topic: "{topic-name}"

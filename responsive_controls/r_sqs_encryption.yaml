@@ -1,0 +1,34 @@
+---
+
+policies:
+  - name: r-sqs-queue-encryption
+    resource: aws.sqs
+    description: >
+      Event: Create queue|
+      Compliance: Encryption|
+      Remediation: Delete queue|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sqs.amazonaws.com
+          event: CreateQueue
+          ids: responseElements.queueUrl
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - KmsMasterKeyId: absent
+          - tag:__Exception-SQSEncryption: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: SQS Queue NONCOMPLIANT
+        Message: Encryption not enabled
+        transport:
+          type: sns
+          topic: "{topic-name}"

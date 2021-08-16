@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-dynamodb-tags
+    resource: aws.dynamodb-table
+    description: >
+      Compliance: Missing Tags|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+              - tag:DataClassification: absent
+          - tag:__Exception-DynamoTags: absent

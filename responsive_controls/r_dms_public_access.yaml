@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-dms-public-access
+    resource: aws.dms-instance
+    description: >
+      Event: Create DMS Replication Instance|
+      Compliance: DMS is Public|
+      Remediation: Delete the DMS Instance|
+    mode:
+      type: cloudtrail
+      events:
+        - source: dms.amazonaws.com
+          event: CreateReplicationInstance
+          ids: requestParameters.replicationInstanceIdentifier
+      timeout: 200
+      delay: 80
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: detail.requestParameters.publiclyAccessible
+            value: true
+          - tag:__Exception-DMSPublicAccess: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: DMS NONCOMPLIANT
+        Message: DMS is publicly accessible
+        transport:
+          type: sns
+          topic: "{topic-name}"

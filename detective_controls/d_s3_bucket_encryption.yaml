@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-s3-bucket-encryption
+    resource: aws.s3
+    description: >
+      Compliance: Encryption|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: bucket-encryption
+            state: false
+          - tag:__Exception-S3Encryption: absent

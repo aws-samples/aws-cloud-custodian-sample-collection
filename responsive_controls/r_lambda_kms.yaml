@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-lambda-encryption
+    resource: aws.lambda
+    description: >
+      Event: CreateFunction|
+      Compliance: KMS Missing|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: lambda.amazonaws.com
+          event: CreateFunction20150331
+          ids: requestParameters.functionName
+      timeout: 200
+      delay: 20
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: detail.requestParameters.kMSKeyArn
+            value: absent
+          - tag:__Exception-LambdaEncryption: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Lambda NONCOMPLIANT
+        Message: Missing kms encryption
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-ecr-required-tags
+    resource: aws.ecr
+    description: >
+      Event: Create Repository|
+      Compliance: Missing Tags|
+      Remediation: Tag ECR with NonCompliant key|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ecr.amazonaws.com
+          event: CreateRepository
+          ids: requestParameters.repositoryName
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-ECRTags: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: ECR Required Tags Missing
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: ECR NONCOMPLIANT
+        Message: ECR required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

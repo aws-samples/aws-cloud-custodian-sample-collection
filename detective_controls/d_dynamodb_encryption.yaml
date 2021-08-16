@@ -1,0 +1,18 @@
+---
+
+policies:
+  - name: d-dynamodb-encryption-check
+    resource: aws.dynamodb-table
+    description: >
+      Compliance: KMS Validation|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: SSEDescription.KMSMasterKeyArn
+            value: absent
+          - tag:__Exception-DynamoEncryption: absent

@@ -1,0 +1,18 @@
+---
+policies:
+  - name: d-lambda-runtime
+    resource: aws.lambda
+    description: >
+      Compliance: Lambda runtime python 3.8|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: Runtime
+            op: not-equal
+            value: python3.8
+          - tag:__Exception-LambdaRuntime: absent

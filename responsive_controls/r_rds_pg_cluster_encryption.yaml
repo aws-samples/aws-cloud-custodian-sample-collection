@@ -1,0 +1,43 @@
+---
+
+policies:
+  - name: r-rds-postgres-encryption
+    resource: aws.rds-cluster
+    description: >
+      Event: Create RDS PostgresSQL|
+      Compliance: Encryption|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: rds.amazonaws.com
+          event: CreateDBCluster
+          ids: requestParameters.dBClusterIdentifier
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - or:
+          - type: value
+            key: detail.requestParameters.engine
+            value: aurora-postgresql
+          - and:
+              - type: value
+                key: detail.requestParameters.storageEncrypted
+                value: false
+              - type: value
+                key: detail.requestParameters.kmsKeyId
+                value: absent
+              - tag:__Exception-RDSEncryption: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: RDS PostgresSQL NONCOMPLIANT
+        Message: RDS PostgresSQL is not encrypted
+        transport:
+          type: sns
+          topic: "{topic-name}"

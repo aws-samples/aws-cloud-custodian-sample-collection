@@ -1,0 +1,40 @@
+---
+
+policies:
+  - name: r-sagemaker-notebook-subnet
+    resource: sagemaker-notebook
+    description: >
+      Event: Create Notebook|
+      Compliance: Notebook not on Native Subnet|
+      Remediation: Delete Notebook|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sagemaker.amazonaws.com
+          event: CreateNotebookInstance
+          ids: responseElements.notebookInstanceArn
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: subnet
+            key: tag:Name
+            op: regex
+            value: '^((?!Native).)*$'
+          - tag:__Exception-SagemakerNotebookSubnet: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Not on Native Subnet
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Sagemaker Notebook NONCOMPLIANT
+        Message: Notebook is on wrong subnet
+        transport:
+          type: sns
+          topic: "{topic-name}"

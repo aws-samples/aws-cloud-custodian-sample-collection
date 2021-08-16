@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-emr-logging
+    resource: aws.emr
+    description: >
+      Compliance: EMR logging required|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: LogUri
+            value: absent
+          - tag:__Exception-EMRLogging: absent

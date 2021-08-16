@@ -1,0 +1,41 @@
+---
+
+policies:
+  - name: r-ecs-task-privileged
+    resource: aws.ecs-task-definition
+    description: >
+      Event: Register Task Definition|
+      Compliance: Privileged set to false|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ecs.amazonaws.com
+          event: RegisterTaskDefinition
+          ids: requestParameters.containerDefinitions
+      timeout: 200
+      delay: 80
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: "detail.responseElements.taskDefinition.\
+                requiresCompatibilities[0]"
+            value: "EC2"
+          - type: event
+            key: "detail.responseElements.taskDefinition.\
+                 containerDefinitions[0].privileged"
+            value: true
+          - tag:__Exception-ECSTaskPrivileged: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: ECS task NONCOMPLIANT
+        Message: ECS privileged mode must be disabled
+        transport:
+          type: sns
+          topic: "{topic-name}"

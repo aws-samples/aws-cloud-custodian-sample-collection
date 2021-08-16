@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-sqs-queue-tags
+    resource: aws.sqs
+    description: >
+      Event: Create queue|
+      Compliance: Missing Tags|
+      Remediation: Delete queue|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sqs.amazonaws.com
+          event: CreateQueue
+          ids: responseElements.queueUrl
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-SQSTags: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: SQS Queue NONCOMPLIANT
+        Message: Missing required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

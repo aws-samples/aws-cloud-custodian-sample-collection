@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-sagemaker-notebook-tags
+    resource: sagemaker-notebook
+    description: >
+      Event: Create Notebook|
+      Compliance: Missing Tags|
+      Remediation: Delete Notebook|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sagemaker.amazonaws.com
+          event: CreateNotebookInstance
+          ids: responseElements.notebookInstanceArn
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-SagemakerNotebookTags: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Required Tags Missing
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Sagemaker Notebook NONCOMPLIANT
+        Message: Notebook has missing/wrong tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

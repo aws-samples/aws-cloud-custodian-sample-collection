@@ -1,0 +1,37 @@
+---
+
+policies:
+  - name: r-dynamodb-pitr
+    resource: aws.dynamodb-table
+    description: >
+      Event: Create Table|
+      Compliance: DynamoDB Point in Time recovery is not enabled|
+      Remediation: Delete Table|
+    mode:
+      type: cloudtrail
+      events:
+        - source: dynamodb.amazonaws.com
+          event: CreateTable
+          ids: requestParameters.tableName
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: continuous-backup
+            key: PointInTimeRecoveryDescription.PointInTimeRecoveryStatus
+            op: eq
+            value: DISABLED
+          - tag:__Exception-DynamoPITR: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: DynamoDB NONCOMPLIANT
+        Message: Point in time recovery not enabled
+        transport:
+          type: sns
+          topic: "{topic-name}"

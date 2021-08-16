@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-emr-security-config
+    resource: aws.emr
+    description: >
+      Compliance: EMR security config missing|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: SecurityConfiguration
+            value: absent
+          - tag:__Exception-EMRSecurityConfig: absent

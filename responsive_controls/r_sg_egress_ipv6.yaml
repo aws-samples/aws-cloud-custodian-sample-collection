@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-securitygroup-egress-ipv6
+    resource: security-group
+    description: >
+      Event: Create SecurityGroup|
+      Compliance: Egress configuration|
+      Remediation: Remove Permission|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: CreateSecurityGroup
+          ids: responseElements.groupId
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: egress
+            CidrV6:
+              value:
+                - ::/0
+              op: in
+          - tag:__Exception-SecurityGroup: absent
+    actions:
+      #- type: remove-permissions
+      #  egress: matched
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Security Group NONCOMPLIANT
+        Message: Security Group egress is open
+        transport:
+          type: sns
+          topic: "{topic-name}"

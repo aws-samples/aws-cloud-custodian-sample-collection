@@ -1,0 +1,16 @@
+---
+
+policies:
+  - name: d-sns-encryption
+    resource: aws.sns
+    description: >
+      Compliance: Encryption|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - KmsMasterKeyId: absent
+          - tag:__Exception-SNSEncryption: absent

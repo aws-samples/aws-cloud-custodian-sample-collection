@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-emr-tags
+    resource: aws.emr
+    description: >
+      Event: RunJobFlow|
+      Compliance: Missing Tags|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - event: RunJobFlow
+          source: elasticmapreduce.amazonaws.com
+          ids: responseElements.jobFlowId
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-EMRTags: absent
+    actions:
+      #- type: terminate
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: EMR Cluster NONCOMPLIANT
+        Message: missing required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

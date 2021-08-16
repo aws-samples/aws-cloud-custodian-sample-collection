@@ -1,0 +1,20 @@
+---
+
+policies:
+  - name: d-kinesis-stream-encryption-missing
+    resource: aws.kinesis
+    description: >
+      Compliance: Encryption Missing|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: StreamEncryption
+            op: eq
+            value: NoEncryption
+          - tag:__Exception-KinesisStreamEncryption: absent

@@ -1,0 +1,25 @@
+---
+
+policies:
+  - name: d-redshift-required-log-properties
+    resource: aws.redshift
+    description: >
+      Compliance: Required Logging Properties Missing|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - or:
+              - type: logging
+                key: LoggingEnabled
+                value: false
+              - type: logging
+                key: S3KeyPrefix
+                value: absent
+              - type: logging
+                key: BucketName
+                value: absent
+          - tag:__Exception-RedshiftLogging: absent

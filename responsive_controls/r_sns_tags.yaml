@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-sns-required-tags
+    resource: aws.sns
+    description: >
+      Event: Create SNS Topic|
+      Compliance: Missing Tags|
+      Remediation: Delete SNS topic|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sns.amazonaws.com
+          event: CreateTopic
+          ids: responseElements.topicArn
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-SNSTags: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: SNS NONCOMPLIANT
+        Message: SNS required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,16 @@
+---
+
+policies:
+  - name: d-alb-logging
+    resource: aws.app-elb
+    description: >
+      Compliance: Logging |
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: is-not-logging
+          - tag:__Exception-ALBLogging: absent

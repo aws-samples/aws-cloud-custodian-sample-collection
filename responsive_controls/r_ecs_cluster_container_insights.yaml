@@ -1,0 +1,37 @@
+---
+
+policies:
+  - name: r-ecs-cluster-containerinsights
+    resource: aws.ecs
+    description: >
+      Event: Create Cluster|
+      Compliance: Container Insights is enabled|
+      Remediation: notify via sns|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ecs.amazonaws.com
+          event: CreateCluster
+          ids: requestParameters.clusterName
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: detail.responseElements.\
+                cluster.settings.\
+                value
+            value: disabled
+          - tag:__Exception-ECSContainerInsights: absent
+    actions:
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: ECS cluster NONCOMPLIANT
+        Message: ECS ContainerInsights Disabled
+        transport:
+          type: sns
+          topic: "{topic-name}"

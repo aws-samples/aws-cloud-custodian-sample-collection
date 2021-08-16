@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-securitygroup-ingress-ipv4-ssh
+    resource: security-group
+    description: >
+      Event: CreateSecurityGroup|
+      Compliance: Global access to SSH|
+      Remediation: Remove permission|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: CreateSecurityGroup
+          ids: responseElements.groupId
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: ingress
+            Ports: [22]
+            Cidr:
+              value: 0.0.0.0/0
+              op: in
+          - tag:__Exception-SecurityGroup: absent
+    actions:
+      #- type: remove-permissions
+      #  ingress: matched
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Security Group NONCOMPLIANT
+        Message: Security Group is open on SSH port 22
+        transport:
+          type: sns
+          topic: "{topic-name}"

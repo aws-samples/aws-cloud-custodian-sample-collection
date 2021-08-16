@@ -1,0 +1,21 @@
+---
+
+policies:
+  - name: d-rds-postgres-required-tags
+    resource: aws.rds
+    description: >
+      Compliance: Missing Tags|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - type: value
+            key: Engine
+            value: aurora-postgresql
+          - tag:__Exception-RDSTags: absent

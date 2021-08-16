@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-glue-crawler-security-config
+    resource: aws.glue-crawler
+    description: >
+      Compliance: Glue Security configuration set
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: security-config
+            key: EncryptionConfiguration
+            missing: true
+          - tag:__Exception-GlueCrawlerSecurityConfig: absent

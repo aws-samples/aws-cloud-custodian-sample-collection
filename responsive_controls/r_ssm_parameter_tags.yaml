@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-ssm-parameter-required-tags
+    resource: aws.ssm-parameter
+    description: >
+      Event: PutParameter|
+      Compliance: Required Tags exist|
+      Remediation: Auto-Tag|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ssm.amazonaws.com
+          event: PutParameter
+          ids: requestParameters.name
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-SSMTags: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: SSM Parameter is NONCOMPLIANT
+        Message: SSM Parameter is missing tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,21 @@
+---
+
+policies:
+  - name: d-codepipeline-missing-encryption
+    resource: aws.codepipeline
+    description: >
+      Compliance: Missing Encryption|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: artifactStore.encryptionKey
+            value: absent
+          - type: value
+            key: artifactStores[].artifactStore.encryptionKey
+            value: absent
+          - tag:_Exception-CodePipelineRequiredEncryption: absent

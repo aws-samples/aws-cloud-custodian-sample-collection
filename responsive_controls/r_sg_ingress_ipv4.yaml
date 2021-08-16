@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-securitygroup-ingress-ipv4
+    resource: security-group
+    description: >
+      Event: Create SecurityGroup|
+      Compliance: Ingress configuration|
+      Remediation: Remove Permission|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: CreateSecurityGroup
+          ids: responseElements.groupId
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: ingress
+            Cidr:
+              value:
+                - 0.0.0.0/0
+              op: in
+          - tag:__Exception-SecurityGroup: absent
+    actions:
+      #- type: remove-permissions
+      #  ingress: matched
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Security Group NONCOMPLIANT
+        Message: Security Group Ingress is open
+        transport:
+          type: sns
+          topic: "{topic-name}"

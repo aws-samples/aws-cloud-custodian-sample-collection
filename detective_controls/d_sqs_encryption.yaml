@@ -1,0 +1,17 @@
+---
+
+policies:
+
+  - name: d-sqs-queue-encryption
+    resource: aws.sqs
+    description: >
+      Compliance: Encryption disabled|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - KmsMasterKeyId: absent
+          - tag:__Exception-SQSEncryption: absent

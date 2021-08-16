@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-hostedzone-required-tags
+    resource: aws.hostedzone
+    description: >
+      Event: Create Route53 HostedZone|
+      Compliance: Missing Tags|
+      Remediation: Tag it as NonCompliant|
+    mode:
+      type: cloudtrail
+      events:
+        - source: route53.amazonaws.com
+          event: CreateHostedZone
+          ids: responseElements.hostedZone.id
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-R53HostedZoneTags: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Required Tags Missing
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Route53 HostedZone NONCOMPLIANT
+        Message: Route53 HostedZone required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

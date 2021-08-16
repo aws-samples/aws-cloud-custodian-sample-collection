@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-sagemaker-notebook-encryption
+    resource: aws.sagemaker-notebook
+    description: >
+      Compliance: Missing Encryption|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - KmsKeyId: absent
+          - tag:__Exception-SagemakerNotebookEncryption: absent

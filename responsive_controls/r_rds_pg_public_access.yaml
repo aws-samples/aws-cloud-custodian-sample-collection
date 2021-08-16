@@ -1,0 +1,40 @@
+---
+
+policies:
+  - name: r-rds-postgres-public-access
+    resource: aws.rds
+    description: >
+      Event: Create RDS PostgresSQL|
+      Compliance: RDS PostgresSQL must not be publicly accessible|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: rds.amazonaws.com
+          event: CreateDBInstance
+          ids: requestParameters.dBInstanceIdentifier
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - or:
+          - type: value
+            key: detail.requestParameters.engine
+            value: aurora-postgresql
+          - and:
+              - type: value
+                key: detail.requestParameters.publiclyAccessible
+                value: true
+              - tag:__Exception-RDSPublicAccess: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: RDS PostgresSQL NONCOMPLIANT
+        Message: RDS PostgresSQL is publicly accessible
+        transport:
+          type: sns
+          topic: "{topic-name}"

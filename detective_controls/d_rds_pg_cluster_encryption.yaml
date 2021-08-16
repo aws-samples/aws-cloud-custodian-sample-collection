@@ -1,0 +1,24 @@
+---
+
+policies:
+  - name: d-rds-postgres-encryption
+    resource: aws.rds
+    description: >
+      Compliance: RDS PostgresSQL must be encrypted|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: Engine
+            value: aurora-postgresql
+          - type: value
+            key: StorageEncrypted
+            value: false
+          - type: value
+            key: KmsKeyId
+            value: absent
+          - tag:__Exception-RDSEncryption: absent

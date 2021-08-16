@@ -1,0 +1,37 @@
+---
+
+policies:
+  - name: r-kinesis-encryption
+    resource: aws.kinesis
+    description: >
+      Event: CreateStream|
+      Compliance: Encryption|
+      Remediation: Delete Stream|
+    mode:
+      type: cloudtrail
+      events:
+        - source: kinesis.amazonaws.com
+          event: CreateStream
+          ids: requestParameters.streamName
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: StreamEncryption
+            op: eq
+            value: NoEncryption
+          - tag:__Exception-KinesisStreamEncryption: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Kinesis NONCOMPLIANT
+        Message: Stream is missing encryption
+        transport:
+          type: sns
+          topic: "{topic-name}"

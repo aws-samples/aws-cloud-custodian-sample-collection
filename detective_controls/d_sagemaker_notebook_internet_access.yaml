@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-sagemaker-notebook-internet-access
+    resource: aws.sagemaker-notebook
+    description: >
+      Compliance: Internet Access Enabled|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - DirectInternetAccess: Enabled
+          - tag:__Exception-SagemakerNotebookInternetAccess: absent

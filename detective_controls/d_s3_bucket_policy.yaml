@@ -1,0 +1,16 @@
+---
+
+policies:
+  - name: d-s3-bucket-policy
+    resource: aws.s3
+    description: >
+      Compliance: Policy Statement|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: missing-statement
+          - tag:__Exception-S3Policy: absent

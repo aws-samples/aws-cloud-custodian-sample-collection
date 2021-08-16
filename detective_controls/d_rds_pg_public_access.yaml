@@ -1,0 +1,21 @@
+---
+
+policies:
+  - name: d-rds-postgres-public-access
+    resource: aws.rds
+    description: >
+      Compliance: RDS PostgresSQL must not be publicly accessible|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: Engine
+            value: aurora-postgresql
+          - type: value
+            key: PubliclyAccessible
+            value: true
+          - tag:__Exception-RDSPublicAccess: absent

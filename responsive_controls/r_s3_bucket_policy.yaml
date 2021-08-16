@@ -1,0 +1,33 @@
+---
+
+policies:
+  - name: r-s3-bucket-policy
+    resource: aws.s3
+    description: >
+      Event: CreateBucket|
+      Compliance: Bucket Policy|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - CreateBucket
+      timeout: 660
+      delay: 600
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: missing-statement
+          - tag:__Exception-S3Policy: absent
+    actions:
+      #- type: delete
+      #  remove-contents: false
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Bucket NONCOMPLIANT
+        Message: Missing bucket policy statement
+        transport:
+          type: sns
+          topic: "{topic-name}"

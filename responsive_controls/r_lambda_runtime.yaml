@@ -1,0 +1,35 @@
+---
+policies:
+  - name: r-lambda-runtime
+    resource: aws.lambda
+    description: >
+      Event: CreateFunction20150331, Compliance: Runtime python 3.8,
+      Remediation: Delete
+    mode:
+      type: cloudtrail
+      events:
+        - source: lambda.amazonaws.com
+          event: CreateFunction20150331
+          ids: requestParameters.functionName
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: Runtime
+            op: not-equal
+            value: "python3.8"
+          - tag:__Exception-LambdaRuntime: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Lambda NONCOMPLIANT
+        Message: Lambda Runtime not python3.8
+        transport:
+          type: sns
+          topic: "{topic-name}"

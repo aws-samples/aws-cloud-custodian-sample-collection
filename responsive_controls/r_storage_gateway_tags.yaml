@@ -1,0 +1,35 @@
+---
+
+policies:
+  - name: r-storagegateway-missing-tags
+    resource: aws.storage-gateway
+    description: >
+      Event: ActivateGateway|
+      Compliance: Missing Tags|
+      Remediation: Notify|
+    mode:
+      type: cloudtrail
+      events:
+        - source: storagegateway.amazonaws.com
+          event: ActivateGateway
+          ids: responseElements.gatewayARN
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-StorageGatewayTags: absent
+    actions:
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Storage Gateway NONCOMPLIANT
+        Message: Missing Required Tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

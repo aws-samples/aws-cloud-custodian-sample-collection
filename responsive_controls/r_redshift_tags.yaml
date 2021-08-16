@@ -1,0 +1,37 @@
+---
+
+policies:
+
+  - name: r-redshift-required-tags
+    resource: aws.redshift
+    description: >
+      Event: CreateCluster|
+      Compliance: Missing Tags|
+      Remediation: Delete Cluster|
+    mode:
+      type: cloudtrail
+      events:
+        - source: redshift.amazonaws.com
+          event: CreateCluster
+          ids: requestParameters.clusterIdentifier
+      timeout: 660
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-RedshiftTags: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Redshift Cluster NONCOMPLIANT
+        Message: Redshift required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

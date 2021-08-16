@@ -1,0 +1,37 @@
+---
+
+policies:
+  - name: r-sagemaker-notebook-internet
+    resource: sagemaker-notebook
+    description: >
+      Event: Create Notebook|
+      Compliance: Direct Internet Access Enabled|
+      Remediation: Delete Notebook|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sagemaker.amazonaws.com
+          event: CreateNotebookInstance
+          ids: responseElements.notebookInstanceArn
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - DirectInternetAccess: Enabled
+          - tag:__Exception-SagemakerNotebookInternetAccess: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Direct Internet Access Enabled
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Sagemaker Notebook NONCOMPLIANT
+        Message: Notebook has Internet Access
+        transport:
+          type: sns
+          topic: "{topic-name}"

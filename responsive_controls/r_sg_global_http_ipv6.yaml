@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-securitygroup-ingress-ipv6-http
+    resource: security-group
+    description: >
+      Event: CreateSecurityGroup|
+      Compliance: Global access to TCP|
+      Remediation: Remove permission|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: CreateSecurityGroup
+          ids: responseElements.groupId
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: ingress
+            Ports: [80]
+            CidrV6:
+              value: ::/0
+              op: in
+          - tag:__Exception-SecurityGroup: absent
+    actions:
+      #- type: remove-permissions
+      #  ingress: matched
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Security Group NONCOMPLIANT
+        Message: Security Group is open on TCP port 80
+        transport:
+          type: sns
+          topic: "{topic-name}"

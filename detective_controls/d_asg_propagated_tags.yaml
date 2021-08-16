@@ -1,0 +1,19 @@
+---
+policies:
+
+  - name: d-asg-tags
+    resource: aws.asg
+    description: >
+      Compliance: ASG Propagated Tags|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - tag:__Exception-ASGPropagatedTags: absent
+          - type: propagated-tags
+            keys: ["CostCenter", "Application"]
+            match: false
+            propagate: true

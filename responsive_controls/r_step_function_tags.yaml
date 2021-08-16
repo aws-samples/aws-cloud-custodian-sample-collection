@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-stepfunction-required-tags
+    resource: aws.step-machine
+    description: >
+      Event: Create State Machine|
+      Compliance: Missing Tags|
+      Remediation: Tag and Notify|
+    mode:
+      type: cloudtrail
+      events:
+        - source: states.amazonaws.com
+          event: CreateStateMachine
+          ids: responseElements.stateMachineArn
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-StepFunctionTags: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Step Function is missing Required Tags
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: StepFunction NONCOMPLIANT
+        Message: Missing Required Tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

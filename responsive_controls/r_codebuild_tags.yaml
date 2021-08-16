@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-codebuild-missing-tags
+    resource: aws.codebuild
+    description: >
+      Event: Create Project|
+      Compliance: Missing Tags|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: codebuild.amazonaws.com
+          event: CreateProject
+          ids: responseElements.project.name
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-CodeBuildTags: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: CodeBuild Project NONCOMPLIANT
+        Message: Missing Required Tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

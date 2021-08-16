@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-ebs-encryption
+    resource: aws.ebs
+    description: >
+      Event: CreateVolume|
+      Compliance: Encryption|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: CreateVolume
+          ids: responseElements.volumeId
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: detail.responseElements.encrypted
+            value: false
+          - tag:__Exception-EBSEncryption: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: EBS Volume NONCOMPLIANT
+        Message: EBS Volume Required Encryption setting Missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

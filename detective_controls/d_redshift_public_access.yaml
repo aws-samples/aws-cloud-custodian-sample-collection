@@ -1,0 +1,18 @@
+---
+
+policies:
+  - name: d-redshift-public-access
+    resource: aws.redshift
+    description: >
+      Compliance: Redshift Publicly Accessible|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: PubliclyAccessible
+            value: true
+          - tag:__Exception-PublicRedshift: absent

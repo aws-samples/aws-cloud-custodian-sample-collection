@@ -1,0 +1,20 @@
+---
+
+policies:
+  - name: d-ec2-instance-type
+    resource: aws.ec2
+    description: >
+      Compliance: EC2 instance type
+      should not be t2|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: value
+            key: InstanceType
+            op: contains
+            value: t2
+          - tag:__Exception-EC2InstanceType: absent

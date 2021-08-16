@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-codepipeline-tags
+    resource: codepipeline
+    description: >
+      Event: CreatePipeline|
+      Compliance: Missing Tags|
+      Remediation: Notify|
+    mode:
+      type: cloudtrail
+      events:
+        - source: codepipeline.amazonaws.com
+          event: CreatePipeline
+          ids: requestParameters.name
+      timeout: 100
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-CodePipelineTags: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: CodePipeline NONCOMPLIANT
+        Message: Missing required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

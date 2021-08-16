@@ -1,0 +1,37 @@
+---
+
+policies:
+  - name: r-ec2-public-ip
+    resource: aws.ec2
+    description: >
+      Event: RunInstances|
+      Compliance:No Public Ip Address|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: RunInstances
+          ids: responseElements.instancesSet.items[].instanceId
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: "detail.requestParameters.networkInterfaceSet.\
+                  items[].associatePublicIpAddress"
+            value: true
+          - tag:__Exception-PublicIpEC2: absent
+    actions:
+      # - type: terminate
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: EC2 Instance NONCOMPLIANT
+        Message: EC2 Instance has Public Ip address
+        transport:
+          type: sns
+          topic: "{topic-name}"

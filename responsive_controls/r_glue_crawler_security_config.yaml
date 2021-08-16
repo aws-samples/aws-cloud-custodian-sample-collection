@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-glue-crawler-security-config
+    resource: aws.glue-crawler
+    description: >
+      Event: CreateCrawler|
+      Compliance: Security configuration set|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: glue.amazonaws.com
+          event: CreateCrawler
+          ids: requestParameters.name
+      timeout: 200
+      delay: 5
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: security-config
+            key: EncryptionConfiguration
+            missing: true
+          - tag:__Exception-GlueCrawlerSecurityConfig: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Glue Crawler NONCOMPLIANT
+        Message: Missing security configuration
+        transport:
+          type: sns
+          topic: "{topic-name}"

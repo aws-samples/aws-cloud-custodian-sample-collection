@@ -1,0 +1,23 @@
+---
+policies:
+  - name: d-ecs-task-privileged
+    resource: aws.ecs-task-definition
+    description: >
+      Compliance: privileged set to false.|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: event
+            key: "detail.responseElements.taskDefinition.\
+                requiresCompatibilities[0]"
+            value: "EC2"
+          - type: event
+            key: "detail.responseElements.taskDefinition.\
+                 containerDefinitions[0].privileged"
+            value: true
+          - tag:__Exception-ECSTaskPrivileged: absent

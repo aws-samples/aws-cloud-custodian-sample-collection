@@ -1,0 +1,37 @@
+---
+
+policies:
+  - name: r-sagemaker-notebook-encryption
+    resource: sagemaker-notebook
+    description: >
+      Event: Create Notebook|
+      Compliance: Encryption|
+      Remediation: Delete Notebook|
+    mode:
+      type: cloudtrail
+      events:
+        - source: sagemaker.amazonaws.com
+          event: CreateNotebookInstance
+          ids: responseElements.notebookInstanceArn
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - KmsKeyId: absent
+          - tag:__Exception-SagemakerNotebookEncryption: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Encryption Disabled
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Sagemaker Notebook NONCOMPLIANT
+        Message: Notebook is not encrypted
+        transport:
+          type: sns
+          topic: "{topic-name}"

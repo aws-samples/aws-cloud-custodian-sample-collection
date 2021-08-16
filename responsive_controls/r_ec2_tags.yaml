@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-ec2-required-tags
+    resource: aws.ec2
+    description: >
+      Event: RunInstances|
+      Compliance: Missing Tags|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: RunInstances
+          ids: responseElements.instancesSet.items[].instanceId
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-EC2Tags: absent
+    actions:
+      # - type: terminate
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: EC2 Instance NONCOMPLIANT
+        Message: EC2 Instance required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

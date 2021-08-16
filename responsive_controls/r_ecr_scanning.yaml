@@ -1,0 +1,41 @@
+---
+
+policies:
+  - name: r-ecr-scanning
+    resource: aws.ecr
+    description: >
+      Event: Create Repository|
+      Compliance: Image Scanning Enabled|
+      Remediation: Notify via SNS|
+    mode:
+      type: cloudtrail
+      events:
+        - source: ecr.amazonaws.com
+          event: CreateRepository
+          ids: requestParameters.repositoryName
+      timeout: 200
+      delay: 80
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive 
+    filters:
+      - and:
+          - type: event
+            key: "detail.responseElements.\
+                  repository.imageScanningConfiguration.\
+                  scanOnPush.value"
+            value: "false"
+          - tag:__Exception-ECRScanning: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Image Scanning Not Enabled
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - "arn:aws:sns:{region}:{account_id}:{topic-name}"
+        Subject: "ECR Repository NONCOMPLIANT"
+        Message: "ECR Repository image scanning not enabled"
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-hostedzone-logging
+    resource: aws.hostedzone
+    description: >
+      Event: Create Route53 HostedZone|
+      Compliance: route53 HostedZone query logging disabled|
+      Remediation: Enable Logging|
+    mode:
+      type: cloudtrail
+      events:
+        - source: route53.amazonaws.com
+          event: CreateHostedZone
+          ids: responseElements.hostedZone.id
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - type: query-logging-enabled
+                state: false
+          - tag:__Exception-R53HostedZonesLogging: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Query Logging is disabled
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Route53 HostedZone NONCOMPLIANT
+        Message: Route53 Logging not enabled
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-codepipeline-artifact-kms
+    resource: codepipeline
+    description: >
+      Event: CreatePipeline|
+      Compliance: Required Tags|
+      Remediation: Notify|
+    mode:
+      type: cloudtrail
+      events:
+        - source: codepipeline.amazonaws.com
+          event: CreatePipeline
+          ids: requestParameters.pipeline.name
+      timeout: 100
+      delay: 60
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: detail.requestParameters.pipeline.artifactStore.encryptionKey
+            value: absent
+          - tag:__Exception-CodePipelineRequiredEncryption: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: CodePipeline NONCOMPLIANT
+        Message: Missing Required Tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-glue-crawler-tags
+    resource: aws.glue-crawler
+    description: >
+      Event: CreateCrawler|
+      Compliance: Missing Tags|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: glue.amazonaws.com
+          event: CreateCrawler
+          ids: requestParameters.name
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-GlueCrawlerTags: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Glue Crawler NONCOMPLIANT
+        Message: Missing required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

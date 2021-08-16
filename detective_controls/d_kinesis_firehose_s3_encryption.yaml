@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-encrypt-s3-destination-missing
+    resource: aws.firehose
+    description: >
+      Compliance: Encryption Missing|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - KmsMasterKeyId: absent
+          - tag:__Exception-FirehoseS3Encryption: absent

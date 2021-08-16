@@ -1,0 +1,16 @@
+---
+policies:
+  - name: d-cloudwatchlog-retention-period-missing
+    resource: aws.log-group
+    description: >
+      Compliance: Retention Period Missing|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - RetentionInDays: absent
+          - tag:_Exception-CloudWatchLogRetention: absent

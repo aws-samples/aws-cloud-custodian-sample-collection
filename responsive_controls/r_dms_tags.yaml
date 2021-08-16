@@ -1,0 +1,36 @@
+---
+
+policies:
+  - name: r-dms-tags-missing
+    resource: aws.dms-instance
+    description: >
+      Event: Create DMS Replication Instance|
+      Compliance: Missing Tags|
+      Remediation: Delete the DMS Instance|
+    mode:
+      type: cloudtrail
+      events:
+        - source: dms.amazonaws.com
+          event: CreateReplicationInstance
+          ids: requestParameters.replicationInstanceIdentifier
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-DMSTags: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: DMS NONCOMPLIANT
+        Message: DMS is missing tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

@@ -1,0 +1,39 @@
+---
+
+policies:
+  - name: r-firehose-s3-encryption
+    resource: aws.firehose
+    description: >
+      Event: CreateDeliveryStream|
+      Compliance: Encryption|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: firehose.amazonaws.com
+          event: CreateDeliveryStream
+          ids: requestParameters.deliveryStreamName
+      timeout: 200
+      delay: 80
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: "detail.requestParameters.\
+                  extendedS3DestinationConfiguration.\
+                  encryptionConfiguration.noEncryptionConfig"
+            op: eq
+            value: NoEncryption
+          - tag:__Exception-FirehoseS3Encryption: absent
+    actions:
+      #- type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Kinesis Firehose NONCOMPLIANT
+        Message: Firehose is missing s3 dest encryption
+        transport:
+          type: sns
+          topic: "{topic-name}"

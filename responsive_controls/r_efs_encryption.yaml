@@ -1,0 +1,40 @@
+---
+
+policies:
+
+  - name: r-efs-encryption
+    resource: efs
+    description: >
+      Event: CreateFileSystem|
+      Compliance: Required KMSKeyId|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: elasticfilesystem.amazonaws.com
+          event: CreateFileSystem
+          ids: responseElements.fileSystemId
+      timeout: 200
+      delay: 5
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: value
+            key: Encrypted
+            value: false
+          - type: value
+            key: KmsKeyId
+            value: absent
+          - tag:__Exception-EFSEncryption: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: EFS File System NONCOMPLIANT
+        Message: EFS File System must be encrypted
+        transport:
+          type: sns
+          topic: "{topic-name}"

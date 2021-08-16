@@ -1,0 +1,43 @@
+---
+
+policies:
+  - name: r-rds-postgres-required-tags
+    resource: aws.rds-cluster
+    description: >
+      Event: Create RDS PostgresSQL|
+      Compliance: Missing Tags|
+      Remediation: Tag it as NonCompliant|
+    mode:
+      type: cloudtrail
+      events:
+        - source: rds.amazonaws.com
+          event: CreateDBCluster
+          ids: requestParameters.dBClusterIdentifier
+      timeout: 200
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - or:
+          - type: value
+            key: detail.requestParameters.engine
+            value: aurora-postgresql
+          - and:
+              - or:
+                  - tag:CostCenter: absent
+                  - tag:Application: absent
+              - tag:__Exception-RDSTags: absent
+    actions:
+      - type: tag
+        tags:
+          CustodianNotification: Required Tags Missing
+          NonCompliantTag: "TRUE"
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: RDS PostgresSQL NONCOMPLIANT
+        Message: RDS PostgresSQL required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

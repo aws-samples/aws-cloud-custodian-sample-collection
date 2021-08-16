@@ -1,0 +1,35 @@
+---
+
+policies:
+  - name: r-elasticache-redis-required-tags
+    resource: aws.cache-cluster
+    description: >
+      Event: Create Elasticache for Redis|
+      Compliance: Missing Tags|
+      Remediation: Delete the Elasticache cluster|
+    mode:
+      type: cloudtrail
+      events:
+        - source: elasticache.amazonaws.com
+          event: CreateReplicationGroup
+          ids: requestParameters.replicationGroupId
+      timeout: 600
+      delay: 10
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-ElasticacheRedisTags: absent
+    actions:
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Redis Elasticache NONCOMPLIANT
+        Message: Redis Elasticache required tags missing
+        transport:
+          type: sns
+          topic: "{topic-name}"

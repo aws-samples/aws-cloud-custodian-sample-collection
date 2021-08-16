@@ -1,0 +1,36 @@
+---
+
+policies:
+
+  - name: emr-termination-protected
+    resource: aws.emr
+    description: >
+      Event: CreateCluster. Compliance: Required Tags. Remediation: Delete
+    mode:
+      type: cloudtrail
+      events:
+        - source: emr.amazonaws.com
+          event: CreateCluster
+          ids: "requestParameters.name"
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      timeout: 200
+      delay: 5
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: event
+            key: "detail.requestParameters.instances.terminationProtected"
+            value: "false"
+          - "tag:__Exception-EmrTerminationProtected": absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account}:{topic-name}
+        Subject: "EMR Cluster NONCOMPLIANT"
+        Message: "termination protection not enabled"
+        transport:
+          type: sns
+          topic: "{topic-name}"

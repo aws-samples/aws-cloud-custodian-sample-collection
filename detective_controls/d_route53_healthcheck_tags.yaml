@@ -1,0 +1,18 @@
+---
+
+policies:
+  - name: d-healthcheck-required-tags
+    resource: aws.healthcheck
+    description: >
+      Compliance: route53 HealthCheck required tags missing
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - or:
+          - tag:CostCenter: absent
+          - tag:Application: absent
+      - tag:__Exception-R53HealthCheckTags: absent

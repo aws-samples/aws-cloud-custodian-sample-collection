@@ -1,0 +1,33 @@
+---
+
+policies:
+  - name: r-s3-public-access
+    resource: aws.s3
+    description: >
+      Event: CreateBucket|
+      Compliance: Allowed Public Access|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - CreateBucket
+      timeout: 200
+      delay: 40
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive
+    filters:
+      - and:
+          - type: check-public-block
+          - tag:__Exception-S3PublicAccess: absent
+    actions:
+      #- type: delete
+      #  remove-contents: false
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: Bucket NONCOMPLIANT
+        Message: Bucket allows public access
+        transport:
+          type: sns
+          topic: "{topic-name}"

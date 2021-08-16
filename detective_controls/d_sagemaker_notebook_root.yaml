@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-sagemaker-notebook-root-access
+    resource: aws.sagemaker-notebook
+    description: >
+      Compliance: Root Access Enabled|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - RootAccess: Enabled
+          - tag:__Exception-SagemakerNotebookRoot: absent

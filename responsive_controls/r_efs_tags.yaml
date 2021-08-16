@@ -1,0 +1,37 @@
+---
+
+policies:
+
+  - name: r-efs-tags
+    resource: efs
+    description: >
+      Event: CreateFileSystem|
+      Compliance: Required Tags exist|
+      Remediation: Delete|
+    mode:
+      type: cloudtrail
+      events:
+        - source: elasticfilesystem.amazonaws.com
+          event: CreateFileSystem
+          ids: responseElements.fileSystemId
+      timeout: 200
+      delay: 5
+      role: arn:aws:iam::{account_id}:role/{custodian_responsive_role}
+      tags:
+        CloudCustodianType: Responsive 
+    filters:
+      - and:
+          - or:
+              - tag:CostCenter: absent
+              - tag:Application: absent
+          - tag:__Exception-EFSTags: absent
+    actions:
+      # - type: delete
+      - type: notify
+        to:
+          - arn:aws:sns:{region}:{account_id}:{topic-name}
+        Subject: EFS File System NONCOMPLIANT
+        Message: EFS File System must have required tags
+        transport:
+          type: sns
+          topic: "{topic-name}"

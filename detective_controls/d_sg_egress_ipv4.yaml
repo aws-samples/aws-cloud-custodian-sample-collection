@@ -1,0 +1,20 @@
+---
+
+policies:
+  - name: d-securitygroup-egress-ipv4
+    resource: security-group
+    description: >
+      Compliance: Egress configuration|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: egress
+            Cidr:
+              value:
+                - 0.0.0.0/0
+              op: in
+          - tag:__Exception-SecurityGroup: absent

@@ -1,0 +1,17 @@
+---
+
+policies:
+  - name: d-efs-kms
+    resource: aws.efs
+    description: >
+      Compliance: Encryption|
+    mode:
+      type: config-poll-rule
+      schedule: TwentyFour_Hours
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - KmsKeyId: absent
+          - tag:__Exception-EFSEncryption: absent

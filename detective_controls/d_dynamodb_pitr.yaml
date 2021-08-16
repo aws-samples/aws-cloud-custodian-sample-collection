@@ -1,0 +1,19 @@
+---
+
+policies:
+  - name: d-dynamodb-pitr-check
+    resource: aws.dynamodb-table
+    description: >
+      Compliance: Point in time recovery status check|
+    mode:
+      type: config-rule
+      role: arn:aws:iam::{account_id}:role/{custodian_detective_role}
+      tags:
+        CloudCustodianType: Detective
+    filters:
+      - and:
+          - type: continuous-backup
+            key: PointInTimeRecoveryDescription.PointInTimeRecoveryStatus
+            op: eq
+            value: DISABLED
+          - tag:__Exception-DynamoPITR: absent
