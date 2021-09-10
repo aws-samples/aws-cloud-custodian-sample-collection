@@ -5,9 +5,9 @@
 1. What is Cloud Custodian?
 2. Cloud Custodian Learning Resources
 3. Solution Overview
-4. What does a responsive control do?
+4. What does each control do?
 5. What does a Cloud Custodian policy contain?
-6. How do I deploy a new responsive control?
+6. How do I deploy a cloud custodian policy?
 
 ---
 
@@ -31,7 +31,9 @@ Cloud Custodian is open source.
 
 This solution utilizes Cloud Custodian to create Responsive Controls and Detective Controls.  Each responsive control consists of an AWS Lambda Function, CloudWatch Event Rule, and an AWS Lambda Permission.  Together, they respond to events in the AWS Cloud account and **ACT** to uphold compliance standards.
 
-## 4. What does a responsive control do?
+## 4. What does a each control do?
+
+### Responsive Controls
 
 Each responsive control is unique.  Depending on the AWS Service being monitored and the CloudWatch Event Rule, different actions will need to occur. Here's an example workflow of a responsive control:
 
@@ -41,7 +43,7 @@ Each responsive control is unique.  Depending on the AWS Service being monitored
 4. If Compliance check fails, Lambda Function <deletes the S3 Bucket>.
 5. Sends the result to the SNS Topic
 
-## 4. What does a detective control do?
+### Detective Controls
 
 Each detective control is unique.  Depending on the AWS Service being monitored and the CloudWatch Event Rule, different actions will need to occur. Here's an example workflow of a responsive control:
 
